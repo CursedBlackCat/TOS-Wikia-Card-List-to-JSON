@@ -1,27 +1,30 @@
 import java.io.BufferedWriter;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStreamWriter;
-import java.io.PrintWriter;
-import java.io.UnsupportedEncodingException;
 import java.io.Writer;
 import java.net.URL;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.Scanner;
 
 import org.json.JSONObject;
 
 public class Main {
+	private static final int MAX_ID = 1986; //highest card ID that exists, inclusive
+
 	private static String getCardNameFromID(int id) {
-		String url = "http://towerofsaviors.wikia.com/wiki/"; //concatenate the ID to the end of this URL, then fetch the title of the webpage for the card name.
+		String url = "https://towerofsaviors.fandom.com/wiki/"; //concatenate the ID to the end of this URL, then fetch the title of the webpage for the card name.
 
 		url += padZeroes(id);
 
 		InputStream response = null;
 		try {
 			response = new URL(url).openStream();
-			Scanner scanner = new Scanner(response);
+			Scanner scanner = new Scanner(response, "utf-8");
 			String responseBody = scanner.useDelimiter("\\A").next();
 			String cardName = responseBody.substring(responseBody.indexOf("<title>") + 7, responseBody.indexOf("</title>"));
 			cardName = cardName.substring(0, cardName.indexOf('|') - 1);
@@ -50,13 +53,13 @@ public class Main {
 			return Integer.toString(id);
 		}
 	}
-
-	public static void main(String[] args) {
+	
+	public static void storeInJSON() {
 		JSONObject jsonObject = new JSONObject();
-		for (int i = 1; i <= 1718; i++) { //max 1718 inclusive
-			System.out.println("Looking up card number " + i);
+		for (int i = 1; i <= MAX_ID; i++) {
+			System.out.println("[JSON] Looking up card number " + i);
 			jsonObject = jsonObject.put(padZeroes(i), getCardNameFromID(i));
-			System.out.println("Added card number " + i);
+			System.out.println("[JSON] Processed card number " + i);
 		}
 
 		try (Writer writer = new BufferedWriter(new OutputStreamWriter(
@@ -65,5 +68,35 @@ public class Main {
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
+	}
+	
+	public static void storeInSQL() throws ClassNotFoundException, SQLException {
+		Connection conn = null;
+		Statement stmt = null;
+		
+		Class.forName("org.sqlite.JDBC");
+		conn = DriverManager.getConnection("jdbc:sqlite:cards.db");
+		stmt = conn.createStatement();
+		
+		String sql = "CREATE TABLE IF NOT EXISTS Cards " +
+				"(ID INTEGER PRIMARY KEY AUTOINCREMENT     NOT NULL," +
+				" CardID          INTEGER    NOT NULL," +
+				" CardName        TEXT       NOT NULL)";
+		stmt.executeUpdate(sql);
+		
+		for (int i = 1; i <= MAX_ID; i++) {
+			System.out.println("[SQL] Looking up card number " + i);
+			String cardName = getCardNameFromID(i).replaceAll("'", "''");
+			sql = "INSERT INTO Cards (CardID, CardName) VALUES (" + padZeroes(i) + ", '" + cardName + "');";
+			stmt.executeUpdate(sql);
+			System.out.println("[SQL] Processed card number " + i);
+		}
+		
+		stmt.close();
+	}
+
+	public static void main(String[] args) throws ClassNotFoundException, SQLException {
+		//storeInJSON();
+		storeInSQL();
 	}
 }
