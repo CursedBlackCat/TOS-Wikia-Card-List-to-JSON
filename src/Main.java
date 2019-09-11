@@ -14,7 +14,7 @@ import java.util.Scanner;
 import org.json.JSONObject;
 
 public class Main {
-	private static final int MAX_ID = 1986; //highest card ID that exists, inclusive
+	private static final int MAX_ID = 2200; //highest card ID that exists, inclusive
 
 	private static String getCardNameFromID(int id) {
 		String url = "https://towerofsaviors.fandom.com/wiki/"; //concatenate the ID to the end of this URL, then fetch the title of the webpage for the card name.
@@ -59,7 +59,7 @@ public class Main {
 		for (int i = 1; i <= MAX_ID; i++) {
 			System.out.println("[JSON] Looking up card number " + i);
 			jsonObject = jsonObject.put(padZeroes(i), getCardNameFromID(i));
-			System.out.println("[JSON] Processed card number " + i);
+			System.out.println("[JSON] Processed card \"" + getCardNameFromID(i) + "\" (number " + i + ")");
 		}
 
 		try (Writer writer = new BufferedWriter(new OutputStreamWriter(
@@ -89,14 +89,14 @@ public class Main {
 			String cardName = getCardNameFromID(i).replaceAll("'", "''");
 			sql = "INSERT INTO Cards (CardID, CardName) VALUES (" + padZeroes(i) + ", '" + cardName + "');";
 			stmt.executeUpdate(sql);
-			System.out.println("[SQL] Processed card number " + i);
+			System.out.println("[SQL] Processed card \"" + getCardNameFromID(i) + "\" (number " + i + ")");
 		}
 		
 		stmt.close();
 	}
 
 	public static void main(String[] args) throws ClassNotFoundException, SQLException {
-		//storeInJSON();
-		storeInSQL();
+		storeInJSON();
+		//storeInSQL();
 	}
 }
