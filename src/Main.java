@@ -14,7 +14,7 @@ import java.util.Scanner;
 import org.json.JSONObject;
 
 public class Main {
-	private static final int MAX_ID = 2200; //highest card ID that exists, inclusive
+	private static int MAX_ID = 2200; //highest card ID that exists, inclusive
 
 	private static String getCardNameFromID(int id) {
 		String url = "https://towerofsaviors.fandom.com/wiki/"; //concatenate the ID to the end of this URL, then fetch the title of the webpage for the card name.
@@ -96,7 +96,18 @@ public class Main {
 	}
 
 	public static void main(String[] args) throws ClassNotFoundException, SQLException {
-		storeInJSON();
-		//storeInSQL();
+		if (args.length != 2){
+			System.out.println("Usage: java -jar carddata.jar <max_card_id> <json/sql>");
+		} else {
+			MAX_ID = Integer.parseInt(args[0]);
+			String instruction = args[1].toLowerCase();
+			if (instruction.equals("json")) {
+				storeInJSON();
+			} else if (instruction.equals("sql")) {
+				storeInSQL();
+			} else {
+				System.out.println("Usage: java -jar carddata.jar <max_card_id> <json/sql>");
+			}
+		}
 	}
 }
